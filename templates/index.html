@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Stay updated with the latest Google Cloud BigQuery release notes. Easily filter, search, select updates, and tweet about features, announcements, and issues with a beautiful developer dashboard.">
+    <title>BigQuery Release Pulse | Developer Dashboard</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Custom Style Sheet -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <!-- Background glow grids for modern rich aesthetics -->
+    <div class="glow-bg-container" aria-hidden="true">
+        <div class="glow-sphere glow-sphere-1"></div>
+        <div class="glow-sphere glow-sphere-2"></div>
+        <div class="glow-sphere glow-sphere-3"></div>
+    </div>
+
+    <!-- Navigation Header -->
+    <header class="main-header" id="header-section">
+        <div class="header-container">
+            <div class="logo-area">
+                <div class="logo-icon-wrapper">
+                    <i class="fa-solid fa-database logo-icon"></i>
+                    <div class="logo-pulse"></div>
+                </div>
+                <div class="logo-text">
+                    <h1>BigQuery <span>Release Pulse</span></h1>
+                    <p class="sub-logo">Real-time update tracker & social sharer</p>
+                </div>
+            </div>
+            
+            <div class="header-actions">
+                <div class="cache-status" id="cache-status-container">
+                    <span class="status-indicator-dot green" id="status-dot"></span>
+                    <span class="status-text" id="status-label">Synchronized</span>
+                </div>
+                <button class="btn btn-refresh" id="btn-refresh" title="Refresh release notes">
+                    <i class="fa-solid fa-arrows-rotate" id="refresh-icon"></i>
+                    <span>Refresh</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="dashboard-layout">
+        <!-- Sidebar Controls (Search & Filters) -->
+        <aside class="sidebar-panel" id="controls-sidebar">
+            <div class="panel-section search-section">
+                <h2><i class="fa-solid fa-magnifying-glass"></i> Search Notes</h2>
+                <div class="search-box">
+                    <input type="text" id="search-input" placeholder="Search keywords (e.g. storage, SQL, ga)..." autocomplete="off">
+                    <button class="clear-search" id="clear-search-btn" style="display: none;"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+            </div>
+
+            <div class="panel-section filter-section">
+                <h2><i class="fa-solid fa-filter"></i> Category Filters</h2>
+                <div class="filter-chips" id="filter-chips-container">
+                    <button class="filter-chip active" data-type="all" id="filter-all">
+                        <span class="chip-color all"></span>
+                        <span class="chip-label">All Updates</span>
+                        <span class="chip-count" id="count-all">0</span>
+                    </button>
+                    <button class="filter-chip" data-type="Feature" id="filter-feature">
+                        <span class="chip-color feature"></span>
+                        <span class="chip-label">Features</span>
+                        <span class="chip-count" id="count-feature">0</span>
+                    </button>
+                    <button class="filter-chip" data-type="Announcement" id="filter-announcement">
+                        <span class="chip-color announcement"></span>
+                        <span class="chip-label">Announcements</span>
+                        <span class="chip-count" id="count-announcement">0</span>
+                    </button>
+                    <button class="filter-chip" data-type="Issue" id="filter-issue">
+                        <span class="chip-color issue"></span>
+                        <span class="chip-label">Issues / Fixes</span>
+                        <span class="chip-count" id="count-issue">0</span>
+                    </button>
+                    <button class="filter-chip" data-type="Change" id="filter-change">
+                        <span class="chip-color change"></span>
+                        <span class="chip-label">Changes</span>
+                        <span class="chip-count" id="count-change">0</span>
+                    </button>
+                    <button class="filter-chip" data-type="Deprecation" id="filter-deprecation">
+                        <span class="chip-color deprecation"></span>
+                        <span class="chip-label">Deprecations</span>
+                        <span class="chip-count" id="count-deprecation">0</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Stats/Info Box -->
+            <div class="panel-section info-section">
+                <h2><i class="fa-solid fa-circle-info"></i> Information</h2>
+                <div class="info-card">
+                    <p>This application monitors the official Google Cloud BigQuery RSS feed, parsing XML nodes into selectable micro-updates. Select any update to compose and share a tweet.</p>
+                    <div class="meta-row">
+                        <span class="meta-label">Source Feed:</span>
+                        <a href="https://docs.cloud.google.com/feeds/bigquery-release-notes.xml" target="_blank" rel="noopener noreferrer" class="feed-link">
+                            XML Feed <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                        </a>
+                    </div>
+                    <div class="meta-row">
+                        <span class="meta-label">Last updated:</span>
+                        <span id="last-updated-text">Checking...</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Timeline Section -->
+        <section class="timeline-container" aria-label="BigQuery Release Notes Timeline">
+            <!-- Alert message for loading/errors -->
+            <div class="alert-banner loading" id="loading-banner">
+                <div class="spinner-ring"></div>
+                <div class="banner-text">
+                    <h3>Fetching BigQuery Release Notes</h3>
+                    <p>Parsing feed XML data and organizing timeline. Please wait...</p>
+                </div>
+            </div>
+            
+            <div class="alert-banner error" id="error-banner" style="display: none;">
+                <i class="fa-solid fa-circle-exclamation error-icon"></i>
+                <div class="banner-text">
+                    <h3>Failed to Load Feed</h3>
+                    <p id="error-msg">An unexpected error occurred while parsing the BigQuery release feed.</p>
+                    <button class="btn btn-secondary btn-sm" id="btn-retry">
+                        <i class="fa-solid fa-arrows-rotate"></i> Retry Connection
+                    </button>
+                </div>
+            </div>
+
+            <!-- Timeline Elements (Will be populated dynamically) -->
+            <div class="timeline" id="timeline-flow" style="display: none;">
+                <!-- Dynamically generated timeline nodes go here -->
+            </div>
+
+            <!-- Empty State -->
+            <div class="empty-state" id="empty-state" style="display: none;">
+                <div class="empty-icon-wrapper">
+                    <i class="fa-solid fa-cube-unfolded"></i>
+                </div>
+                <h3>No Release Notes Found</h3>
+                <p>We couldn't find any updates matching your search criteria or category filter. Try adjusting your query or resetting filters.</p>
+                <button class="btn btn-primary" id="btn-reset-filters">Reset All Filters</button>
+            </div>
+        </section>
+    </main>
+
+    <!-- Floating Selection Action Bar (Appears when cards are selected) -->
+    <div class="floating-selection-bar" id="selection-bar" style="display: none;">
+        <div class="selection-info">
+            <span class="selection-count-badge" id="selection-count">0</span>
+            <span class="selection-text" id="selection-text">update selected to share</span>
+        </div>
+        <div class="selection-actions">
+            <button class="btn btn-secondary btn-sm" id="btn-clear-selection">Cancel</button>
+            <button class="btn btn-primary btn-sm btn-tweet-main" id="btn-tweet-selection">
+                <i class="fa-brands fa-x-twitter"></i> Compose Tweet
+            </button>
+        </div>
+    </div>
+
+    <!-- Tweet Composer Side-Drawer Modal -->
+    <div class="tweet-drawer-overlay" id="tweet-drawer-overlay"></div>
+    <aside class="tweet-drawer" id="tweet-drawer" aria-labelledby="drawer-title">
+        <div class="drawer-header">
+            <h2 id="drawer-title"><i class="fa-brands fa-x-twitter"></i> Tweet Composer</h2>
+            <button class="close-drawer-btn" id="btn-close-drawer" aria-label="Close Composer">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        
+        <div class="drawer-body">
+            <div class="draft-context-card">
+                <span class="badge" id="drawer-update-type">Feature</span>
+                <span class="date" id="drawer-update-date">June 17, 2026</span>
+                <p class="context-snippet" id="drawer-update-snippet"></p>
+            </div>
+
+            <div class="compose-area">
+                <label for="tweet-textarea">Compose your Post on X / Twitter</label>
+                <div class="textarea-wrapper">
+                    <textarea id="tweet-textarea" rows="8" placeholder="Drafting your update..."></textarea>
+                    <div class="text-tools">
+                        <button class="btn-tool" id="btn-reset-tweet" title="Reset to default template">
+                            <i class="fa-solid fa-arrow-rotate-left"></i> Reset
+                        </button>
+                        <button class="btn-tool" id="btn-copy-tweet" title="Copy to clipboard">
+                            <i class="fa-solid fa-copy"></i> Copy
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="character-progress-row">
+                    <span class="character-count" id="char-count">0 / 280</span>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar-fill" id="char-progress"></div>
+                    </div>
+                </div>
+                <p class="warning-text" id="tweet-length-warning" style="display: none;">
+                    <i class="fa-solid fa-triangle-exclamation"></i> Max limit (280 chars) exceeded for standard tweets.
+                </p>
+            </div>
+
+            <div class="composer-tips">
+                <h3>Draft Tips</h3>
+                <ul>
+                    <li>Use concise bullet points to describe complex releases.</li>
+                    <li>Tag relevant terms like #BigQuery, #GoogleCloud, or #SQL.</li>
+                    <li>Links to official release notes are automatically appended!</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="drawer-footer">
+            <button class="btn btn-secondary" id="btn-cancel-drawer">Cancel</button>
+            <button class="btn btn-tweet-action" id="btn-publish-tweet">
+                <i class="fa-brands fa-x-twitter"></i> Post to X
+            </button>
+        </div>
+    </aside>
+
+    <!-- Toast Notification System -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <footer class="app-footer">
+        <p>&copy; 2026 BigQuery Release Pulse. Powered by Google Cloud RSS Feed & Flask.</p>
+    </footer>
+
+    <!-- Custom Script -->
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
